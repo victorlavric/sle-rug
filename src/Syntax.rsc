@@ -12,25 +12,34 @@ start syntax Form
 
 // TODO: question, computed question, block, if-then-else, if-then
 syntax Question
-  = 
-  ; 
+  = Str Id ":" Type ("=" Expr)?
+  | "if" "(" Expr ")" "{" Question* "}" ("else" "{" Question* "}")?
+  ;
 
 // TODO: +, -, *, /, &&, ||, !, >, <, <=, >=, ==, !=, literals (bool, int, str)
 // Think about disambiguation using priorities and associativity
 // and use C/Java style precedence rules (look it up on the internet)
 syntax Expr 
-  = Id \ "true" \ "false" // true/false are reserved keywords.
+  = Id \ "true" \ "false" | Str | Int | Bool // true/false are reserved keywords.
+  | [(] Expr [)]
+  > [!] Expr
+  > left(Expr [*] Expr | Expr [/] Expr)
+  > left(Expr [+] Expr | Expr [\-] Expr)
+  > left(Expr "\>=" Expr | Expr "\<=" Expr | Expr "\>" Expr | Expr "\<" Expr)
+  > left(Expr "==" Expr | Expr "!=" Expr)
+  > left Expr "&&" Expr
+  > left Expr "||" Expr 
   ;
-  
+
 syntax Type
-  = ;  
+  = "boolean" | "integer" | "str";  
   
-lexical Str = ;
+lexical Str = [\"]![\"]*[\"];
 
 lexical Int 
-  = ;
+  = [1-9][0-9]* | [0];
 
-lexical Bool = ;
-
+lexical Bool 
+  = "true" | "false";
 
 
