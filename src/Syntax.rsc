@@ -8,12 +8,12 @@ extend lang::std::Id;
  */
 
 start syntax Form 
-  = "form" Id "{" Question* "}"; 
+  = "form" Id name "{" Question* questions "}"; 
 
 // TODO: question, computed question, block, if-then-else, if-then
 syntax Question
-  = Str Id ":" Type ("=" Expr)?
-  | "if" "(" Expr ")" "{" Question* "}" ("else" "{" Question* "}")?
+  = Str Id name ":" Type ("=" Expr)?
+  | "if" "(" Expr guard ")" "{" Question* questions "}" ("else" "{" Question* questions "}")?
   ;
 
 // TODO: +, -, *, /, &&, ||, !, >, <, <=, >=, ==, !=, literals (bool, int, str)
@@ -21,14 +21,14 @@ syntax Question
 // and use C/Java style precedence rules (look it up on the internet)
 syntax Expr 
   = Id \ "true" \ "false" | Str | Int | Bool // true/false are reserved keywords.
-  | [(] Expr [)]
-  > [!] Expr
-  > left(Expr [*] Expr | Expr [/] Expr)
-  > left(Expr [+] Expr | Expr [\-] Expr)
-  > left(Expr "\>=" Expr | Expr "\<=" Expr | Expr "\>" Expr | Expr "\<" Expr)
-  > left(Expr "==" Expr | Expr "!=" Expr)
-  > left Expr "&&" Expr
-  > left Expr "||" Expr 
+  | "(" Expr ")"
+  > "!" Expr
+  > left(Expr lhs "*" Expr rhs | Expr lhs "/" Expr rhs)
+  > left(Expr lhs "+" Expr rhs | Expr lhs "-" Expr rhs)
+  > left(Expr lhs "\>=" Expr rhs | Expr lhs "\<=" Expr rhs | Expr lhs "\>" Expr rhs | Expr lhs "\<" Expr rhs)
+  > left(Expr lhs "==" Expr rhs | Expr lhs "!=" Expr rhs)
+  > left Expr lhs "&&" Expr rhs
+  > left Expr lhs "||" Expr rhs 
   ;
 
 syntax Type

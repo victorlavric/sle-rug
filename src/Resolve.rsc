@@ -1,6 +1,7 @@
 module Resolve
 
 import AST;
+import IO;
 
 /*
  * Name resolution for QL
@@ -26,9 +27,9 @@ RefGraph resolve(AForm f) = <us, ds, us o ds>
   when Use us := uses(f), Def ds := defs(f);
 
 Use uses(AForm f) {
-  return {}; 
+  return {<id.src, id.name> | expressions <- {t | /AExpr t <- f}, /AId id := expressions};
 }
 
 Def defs(AForm f) {
-  return {}; 
+  return {<id.name, id.src> | /question(_, AId id, _, _) <- f.questions }; 
 }
