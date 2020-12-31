@@ -13,12 +13,11 @@ data AForm(loc src = |tmp:///|)
 
 data AQuestion(loc src = |tmp:///|)
   = question(str content, AId identifier, AType typeOf, list[AExpr] express)
-  | question(str content, AId identifier, AType typeOf, list[AExpr] express)
   | blockQ(AExpr guard, list[AQuestion] questions)
   ;
 
 data AExpr(loc src = |tmp:///|)
-  = ref(AId id) | \Str(str valStr) | \Int(int valInt) | \Bool(bool valBool)
+  = ref(AId id) | Str(str valStr) | Int(int valInt) | Bool(bool valBool)
   | par(AExpr expr)
   | not(AExpr expr)
   | plus(AExpr lhs, AExpr rhs)
@@ -29,7 +28,7 @@ data AExpr(loc src = |tmp:///|)
   | smallerEq(AExpr lhs, AExpr rhs)
   | greater(AExpr lhs, AExpr rhs)
   | smaller(AExpr lhs, AExpr rhs)
-  | eq(AExpr lhs, AExpr rhs)
+  | equal(AExpr lhs, AExpr rhs)
   | notEq(AExpr lhs, AExpr rhs)
   | and(AExpr lhs, AExpr rhs)
   | or(AExpr lhs, AExpr rhs)
@@ -39,5 +38,5 @@ data AId(loc src = |tmp:///|)
   = id(str name);
 
 data AType(loc src = |tmp:///|)
-  = approveType(str typeOf)
+  = \type(str typeOf)
   ;
