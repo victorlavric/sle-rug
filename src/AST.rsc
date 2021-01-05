@@ -13,7 +13,7 @@ data AForm(loc src = |tmp:///|)
 
 data AQuestion(loc src = |tmp:///|)
   = question(str content, AId identifier, AType typeOf, list[AExpr] express)
-  | blockQ(AExpr guard, list[AQuestion] questions)
+  | blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses)
   ;
 
 data AExpr(loc src = |tmp:///|)

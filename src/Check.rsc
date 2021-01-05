@@ -49,11 +49,11 @@ set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
 set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   set[Message] msgs = {};
   
-  if (blockQ(AExpr guard, list[AQuestion] questions):=q) {
+  if (blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses):=q) {
   	msgs += check(guard, tenv, useDef);
     if (typeOf(guard, tenv, useDef) != tbool())
 	  msgs += {error("Guard in if-else statement must be boolean", guard.src)};
-  	for (qq <- questions)
+  	for (qq <- ifs + elses)
   		msgs += check(qq, tenv, useDef);
   	return msgs;
   }
