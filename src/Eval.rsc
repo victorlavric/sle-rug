@@ -76,7 +76,6 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
 
 VEnv eval(AQuestion q, VEnv venv) {
 	for (expr <- q.express) {
-		println(q.identifier.name);
 		venv[q.identifier.name] = eval(expr, venv);
 	}
 		 

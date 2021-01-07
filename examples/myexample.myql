@@ -5,7 +5,7 @@ form Try {
 		"Yolo" yolo: integer
 	}
 	else {
-		"World" world: boolean
+		"World" world: boolean = true
 		"Wow" wow: boolean = world && true 
 	}
 }
