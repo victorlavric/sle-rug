@@ -20,7 +20,6 @@ import lang::html5::DOM; // see standard library
  */
 
 
-
 void compile(AForm f) {
   writeFile(f.src[extension="js"].top, form2js(f));
   writeFile(f.src[extension="html"].top, toString(form2html(f)));
@@ -36,7 +35,7 @@ HTML5Node form2html(AForm f) {
   		h1("Form <f.name>"),
   		h2("Questions : "),
   		div([ question2html(q) | q <- f.questions]),
-  		script(src("tax.js"))
+  		script(src("<f.src[extension="js"].file>"))
   		
   	)
   );
@@ -54,14 +53,17 @@ HTML5Attr determineType(AType t) {
 HTML5Node question2html(AQuestion q) {
 	switch(q) {
 		case blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses):
-			return div(div([question2html(qq) | qq <- ifs]), div([question2html(qq) | qq <- elses]));
+			return div(
+					div(id("<q.src>-if"), span([question2html(qq) | qq <- ifs])), 
+					div(id("<q.src>-else"), span([question2html(qq) | qq <- elses]))
+				   );
 	
 		case question(str content, AId identifier, AType typeOf, list[AExpr] express): {
 			HTML5Attr t = determineType(typeOf);
 			if (size(express) > 0)
-				return form(id("<identifier.name>-form"),label("<content>  <identifier.name>  :  <typeOf.typeOf>"), input(id("<identifier.name>-question"), t));
+				return form(id("<identifier.name>-f"),label("<content>  <identifier.name>  :  <typeOf.typeOf>"), input(id("<identifier.name>-q"), t));
 			else
-				return form(id("<identifier.name>-form"),label("<content>  <identifier.name>  :  <typeOf.typeOf>"), input(id("<identifier.name>-question"), t));
+				return form(id("<identifier.name>-f"),label("<content>  <identifier.name>  :  <typeOf.typeOf>"), input(id("<identifier.name>-q"), t));
 		}
 	}
 }
@@ -71,10 +73,10 @@ str update(\type("boolean"), AId ident, list[AExpr] express) {
 	str result = "";
 	
 	if (size(express) > 0) {
-		result += "document.getElementById(\"<ident.name>-question\").checked = <expression2js(express[0])>;\n";
-		result += "document.getElementById(\"<ident.name>-question\").readOnly = true;\n";
+		result += "document.getElementById(\"<ident.name>-q\").checked = <expression2js(express[0])>;\n";
+		result += "document.getElementById(\"<ident.name>-q\").readOnly = true;\n";
 	} else {
-		result += "document.getElementById(\"<ident.name>-question\").checked = true;\n";
+		result += "document.getElementById(\"<ident.name>-q\").checked = <ident.name>;\n";
 	}
 	
 	return result;
@@ -84,10 +86,10 @@ str update(\type("integer"), AId ident, list[AExpr] express) {
 	str result = "";
 	
 	if (size(express) > 0) {
-		result += "document.getElementById(\"<ident.name>-question\").value = <expression2js(express[0])>;\n";
-		result += "document.getElementById(\"<ident.name>-question\").readOnly = true;\n";
+		result += "document.getElementById(\"<ident.name>-q\").value = <expression2js(express[0])>;\n";
+		result += "document.getElementById(\"<ident.name>-q\").readOnly = true;\n";
 	} else {
-		result += "document.getElementById(\"<ident.name>-question\").value = 0;\n";
+		result += "document.getElementById(\"<ident.name>-q\").value = <ident.name>;\n";
 	}
 	
 	return result;
@@ -97,10 +99,10 @@ str update(\type("str"), AId ident, list[AExpr] express) {
 	str result = "";
 	
 	if (size(express) > 0) {
-		result += "document.getElementById(\"<ident.name>-question\").value = <expression2js(express[0])>;\n";
-		result += "document.getElementById(\"<ident.name>-question\").readOnly = true;\n";
+		result += "document.getElementById(\"<ident.name>-q\").value = <expression2js(express[0])>;\n";
+		result += "document.getElementById(\"<ident.name>-q\").readOnly = true;\n";
 	} else {
-		result += "document.getElementById(\"<ident.name>-question\").value = \"\";\n";
+		result += "document.getElementById(\"<ident.name>-q\").value = <ident.name>;\n";
 	}
 	
 	return result;
@@ -139,9 +141,113 @@ str expression2js(AExpr e) {
 	}
 }
 
-str form2js(AForm f) {
+str defaultFor(\type("boolean")) = "false";
+str defaultFor(\type("integer")) = "0";
+str defaultFor(\type("str")) = "\"\"";
+
+str initVar(AForm f) {
+	str result = "";
+	visit (f) {
+		case question(str content, AId identifier, AType typeOf, list[AExpr] express): {
+			result += "let <identifier.name> = <defaultFor(typeOf)>;\n";
+		}
+	}
+	return result;
+}
+
+str precomputation(AForm f) {
+	str result = "";
+	visit (f) {
+		case question(str content, AId identifier, AType typeOf, list[AExpr] express): {
+			if (size(express) > 0)
+				result += "<identifier.name> = <expression2js(express[0])>;\n";
+		}
+	}
+	return result;
+}
+
+str upToDateVars(AForm f) {
+	str result = "";
+	visit (f) {
+		case question(_, AId identifier, AType typeOf, _):
+			switch (typeOf.typeOf) {
+				case "boolean":  
+					result += "<identifier.name> = document.getElementById(\"<identifier.name>-q\").checked;\n"; 
+				case "integer":
+					result += "<identifier.name> = document.getElementById(\"<identifier.name>-q\").value;\n";
+				case "str":
+					result += "<identifier.name> = document.getElementById(\"<identifier.name>-q\").value;\n";
+			}
+			
+	}
+	
+	return result;
+}
+
+str eventFunction(AForm f) {
+  return "document.addEventListener(\"input\", function () {
+			'  <upToDateVars(f)>
+			'  <computeVariables(f)>
+			'  <ifElseCompute(f)>
+			 })";
+}
+
+str doAll(list[AQuestion] qs, bool v) {
+	str result = "";
+	
+	for (q <- qs) {
+		if (blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses) := q) {
+			if (!v)
+				result += ifElseDet(q);
+			else {
+				visit (q) {
+					case question(_, AId identifier, AType typeOf, _):
+						result += "document.getElementById(\"<identifier.name>-f\").hidden = <v>;\n";
+				}
+			}
+		}
+		else
+			result += "document.getElementById(\"<q.identifier.name>-f\").hidden = <v>;\n";
+	}
+	return result;
+}
+
+str ifElseDet(AQuestion q) {
   str result = "";
   
-  result += computeVariables(f);
+  switch(q) {
+  	  case blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses): {
+  		  result += "if (<expression2js(guard)>) {
+  		          '   <doAll(ifs, false)>
+  		          '   <doAll(elses, true)>
+  		          '} else {
+  		          '   <doAll(ifs, true)>
+  		          '   <doAll(elses, false)>
+  		          '}\n";
+  	  }
+   }
+
   return result;
+}
+
+str ifElseCompute(AForm f) {
+  str result = "";
+  
+  for (q <- f.questions) {
+ 	result += ifElseDet(q);
+  }
+  
+  return result;
+}
+
+str form2js(AForm f) {
+    str result = "";
+    
+    result += initVar(f);
+    result += precomputation(f);
+    result += computeVariables(f);
+    result += ifElseCompute(f);
+    result += eventFunction(f);
+    
+    return result;
 }
