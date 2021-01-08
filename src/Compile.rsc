@@ -28,7 +28,6 @@ void compile(AForm f) {
 HTML5Node form2html(AForm f) {
   return html(
   	head(
-  		script(src("https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js")),
   		title("QL Form <f.name>")
   	),
   	body(
@@ -54,8 +53,8 @@ HTML5Node question2html(AQuestion q) {
 	switch(q) {
 		case blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses):
 			return div(
-					div(id("<q.src>-if"), span([question2html(qq) | qq <- ifs])), 
-					div(id("<q.src>-else"), span([question2html(qq) | qq <- elses]))
+					div(span([question2html(qq) | qq <- ifs])), 
+					div(span([question2html(qq) | qq <- elses]))
 				   );
 	
 		case question(str content, AId identifier, AType typeOf, list[AExpr] express): {
@@ -72,12 +71,10 @@ HTML5Node question2html(AQuestion q) {
 str update(\type("boolean"), AId ident, list[AExpr] express) {
 	str result = "";
 	
-	if (size(express) > 0) {
+	if (size(express) > 0) 
 		result += "document.getElementById(\"<ident.name>-q\").checked = <expression2js(express[0])>;\n";
-		result += "document.getElementById(\"<ident.name>-q\").readOnly = true;\n";
-	} else {
+	else
 		result += "document.getElementById(\"<ident.name>-q\").checked = <ident.name>;\n";
-	}
 	
 	return result;
 }
@@ -85,12 +82,10 @@ str update(\type("boolean"), AId ident, list[AExpr] express) {
 str update(\type("integer"), AId ident, list[AExpr] express) {
 	str result = "";
 	
-	if (size(express) > 0) {
+	if (size(express) > 0)
 		result += "document.getElementById(\"<ident.name>-q\").value = <expression2js(express[0])>;\n";
-		result += "document.getElementById(\"<ident.name>-q\").readOnly = true;\n";
-	} else {
+	else
 		result += "document.getElementById(\"<ident.name>-q\").value = <ident.name>;\n";
-	}
 	
 	return result;
 }
@@ -98,12 +93,11 @@ str update(\type("integer"), AId ident, list[AExpr] express) {
 str update(\type("str"), AId ident, list[AExpr] express) {
 	str result = "";
 	
-	if (size(express) > 0) {
+	if (size(express) > 0)
 		result += "document.getElementById(\"<ident.name>-q\").value = <expression2js(express[0])>;\n";
-		result += "document.getElementById(\"<ident.name>-q\").readOnly = true;\n";
-	} else {
+	else 
 		result += "document.getElementById(\"<ident.name>-q\").value = <ident.name>;\n";
-	}
+	
 	
 	return result;
 }
@@ -146,22 +140,17 @@ str defaultFor(\type("integer")) = "0";
 str defaultFor(\type("str")) = "\"\"";
 
 str initVar(AForm f) {
-	str result = "";
-	visit (f) {
-		case question(str content, AId identifier, AType typeOf, list[AExpr] express): {
-			result += "let <identifier.name> = <defaultFor(typeOf)>;\n";
-		}
-	}
-	return result;
+	return (""| it + "let <identifier.name> = <defaultFor(typeOf)>;\n" | /question(str _, AId identifier, AType typeOf, list[AExpr] _) := f);
 }
 
 str precomputation(AForm f) {
 	str result = "";
 	visit (f) {
-		case question(str content, AId identifier, AType typeOf, list[AExpr] express): {
-			if (size(express) > 0)
+		case question(str content, AId identifier, AType typeOf, list[AExpr] express):
+			if (size(express) > 0) {
 				result += "<identifier.name> = <expression2js(express[0])>;\n";
-		}
+				result += "document.getElementById(\"<identifier.name>-q\").readOnly = true;\n";
+			}
 	}
 	return result;
 }
@@ -192,22 +181,14 @@ str eventFunction(AForm f) {
 			 })";
 }
 
-str doAll(list[AQuestion] qs, bool v) {
+str evaluate(list[AQuestion] qs) {
 	str result = "";
 	
 	for (q <- qs) {
-		if (blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses) := q) {
-			if (!v)
+		if (blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses) := q)
 				result += ifElseDet(q);
-			else {
-				visit (q) {
-					case question(_, AId identifier, AType typeOf, _):
-						result += "document.getElementById(\"<identifier.name>-f\").hidden = <v>;\n";
-				}
-			}
-		}
 		else
-			result += "document.getElementById(\"<q.identifier.name>-f\").hidden = <v>;\n";
+			result += "document.getElementById(\"<q.identifier.name>-f\").hidden = false;\n";
 	}
 	return result;
 }
@@ -218,36 +199,21 @@ str ifElseDet(AQuestion q) {
   switch(q) {
   	  case blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses): {
   		  result += "if (<expression2js(guard)>) {
-  		          '   <doAll(ifs, false)>
-  		          '   <doAll(elses, true)>
+  		          '   <evaluate(ifs)>
+  		          '   <("" | it + "document.getElementById(\"<identifier.name>-f\").hidden = true;\n" | /question(str _, AId identifier, AType _, list[AExpr] _) <- elses)>
   		          '} else {
-  		          '   <doAll(ifs, true)>
-  		          '   <doAll(elses, false)>
+  		          '   <("" | it + "document.getElementById(\"<identifier.name>-f\").hidden = true;\n" | /question(str _, AId identifier, AType _, list[AExpr] _) <- ifs)>
+  		          '   <evaluate(elses)>
   		          '}\n";
   	  }
    }
-
   return result;
 }
 
 str ifElseCompute(AForm f) {
-  str result = "";
-  
-  for (q <- f.questions) {
- 	result += ifElseDet(q);
-  }
-  
-  return result;
+  return ("" | ifElseDet(q) | q <- f.questions);
 }
 
 str form2js(AForm f) {
-    str result = "";
-    
-    result += initVar(f);
-    result += precomputation(f);
-    result += computeVariables(f);
-    result += ifElseCompute(f);
-    result += eventFunction(f);
-    
-    return result;
+    return initVar(f) + precomputation(f) + computeVariables(f) + ifElseCompute(f) + eventFunction(f);
 }

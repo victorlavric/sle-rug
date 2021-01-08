@@ -1,11 +1,12 @@
 form Try {
-	"This is a var" variable: str
+	"This is a var" 
+	variable: str = hello
 	if (variable == "batman") {
 		"Hello" hello: str
 		"Yolo" yolo: integer
 	}
 	else {
-		"World" world: boolean = true
-		"Wow" wow: boolean = world && true 
+		"World" world: boolean
+		"Wow" wow: boolean = wasea && true 
 	}
 }

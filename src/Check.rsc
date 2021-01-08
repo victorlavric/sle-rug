@@ -53,8 +53,8 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   	msgs += check(guard, tenv, useDef);
     if (typeOf(guard, tenv, useDef) != tbool())
 	  msgs += {error("Guard in if-else statement must be boolean", guard.src)};
-  	for (qq <- ifs + elses)
-  		msgs += check(qq, tenv, useDef);
+	for (qq <- ifs + elses)
+	  msgs += check(qq, tenv, useDef);
   	return msgs;
   }
   // Same label stuff.
@@ -69,14 +69,13 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
     t = tint();
   else if (q.typeOf.typeOf == "str")
     t = tstr();
-  
   // Checking for same names and different types.
   for (tv <- tenv) {
-    if (tv.label == q.identifier.name && t != tv.\type)
-      msgs += {error("There are multiple declarations of questions with the same label, though different types.", q.identifier.src)};
+    if (tv.name == q.content && t != tv.\type)
+      msgs += {error("There are multiple declarations of questions with the same name, though different types.", q.identifier.src)};
   	if (tv.name == q.content && tv.label != q.identifier.name) {
   	  msgs += {warning("Same questions have different labels", q.src)};
-  	  }
+  	}
   }
   
   
@@ -84,15 +83,27 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   for (expr <- q.express) {
   	if (typeOf(expr, tenv, useDef) != t)
       msgs += {error("The question type and expression type do not match.", q.typeOf.src)};
+    
     msgs += check(expr, tenv, useDef);
   }
       
   return msgs; 
 }
 
+
 // Check operand compatibility with operators.
 // E.g. for an addition node add(lhs, rhs), 
 //   the requirement is that typeOf(lhs) == typeOf(rhs) == tint()
+
+set[Message] comparisonMessage(AExpr e, TEnv tenv, UseDef useDef) {
+	if (greaterEq(AExpr lhs, AExpr rhs) := e || smallerEq(AExpr lhs, AExpr rhs) := e || greater(AExpr lhs, AExpr rhs) := e ||
+  			smaller(AExpr lhs, AExpr rhs) := e || equal(AExpr lhs, AExpr rhs) := e || notEq(AExpr lhs, AExpr rhs) := e)
+  	   return { error("You cannot compare these two types.", e.src) | typeOf(e, tenv, useDef) == tunknown()} 
+  		            + check(lhs, tenv, useDef) + check(rhs, tenv, useDef);
+  	return {};
+}
+
+
 set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
   set[Message] msgs = {};
   switch (e) {
@@ -129,30 +140,24 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
   	  msgs += { error("You cannot use disjunction if either of questions has a non boolean data type.", e.src) | typeOf(e, tenv, useDef) != tbool()} 
   	            + check(lhs, tenv, useDef) + check(rhs, tenv, useDef);
   	
-  	default:
-  		if (greaterEq(AExpr lhs, AExpr rhs) := e || smallerEq(AExpr lhs, AExpr rhs) := e || greater(AExpr lhs, AExpr rhs) := e ||
-  			smaller(AExpr lhs, AExpr rhs) := e || equal(AExpr lhs, AExpr rhs) := e || notEq(AExpr lhs, AExpr rhs) := e) {
-  		  msgs += { error("You cannot compare these two types.", e.src) | typeOf(e, tenv, useDef) == tunknown()} 
-  		            + check(lhs, tenv, useDef) + check(rhs, tenv, useDef);
-  		}
+  	default: msgs += comparisonMessage(e, tenv, useDef);
+  		  
   }	
   
   return msgs; 
 }
 
+
+// typeOf part
 Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
   switch (e) {
     case ref(id(_, src = loc u)):
       if (<u, loc d> <- useDef, <d, x, _, Type t> <- tenv) {
         return t;
       }
-     case Str(str _):
-     	return tstr();
-     case Int(int _):
-     	return tint();
-     case Bool(bool _): {
-     	return tbool();
-     }
+     case Str(str _): return tstr();
+     case Int(int _): return tint();
+     case Bool(bool _): return tbool();
      case par(AExpr expr): {
      	Type t = typeOf(expr, tenv, useDef);
      	if (t != tunknown())

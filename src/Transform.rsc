@@ -3,7 +3,6 @@ module Transform
 import Syntax;
 import Resolve;
 import AST;
-import IO;
 import ParseTree;
 
 /* 
@@ -33,23 +32,11 @@ import ParseTree;
 AQuestion flatten(q:question(str _, AId identifier, AType _, list[AExpr] _), AExpr e) = blockQ(e, [q], []);
 
 list[AQuestion] flatten(blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses), AExpr e) {
-	list[AQuestion] result = [];
-	
-	for (q <- ifs)
-		result += flatten(q, and(e, guard));
-	for (q <- elses)
-		result += flatten(q, and(e, not(guard)));
-		
-	return result;
+	return ([] | it + flatten(q, and(e, guard)) | q <- ifs) + ([] | it + flatten(q, and(e, not(guard))) | q <- ifs);
 }
 
 AForm flatten(AForm f, AExpr e) {
-	list[AQuestion] questions = [];
-	println(e);
-	for (q <- f.questions) {
-		questions += flatten(q, e);
-	}
-	f.questions = questions;
+	f.questions = ([] | it + flatten(q, e) | q <- f.questions);
 	return f;
 }
 
@@ -70,7 +57,7 @@ AForm flatten(AForm f) {
    	 toRename += { u | <u, useOrDef> <- useDef};
    if (useOrDef in useDef.use, <useOrDef, loc definition> <- useDef)
    	 toRename += {definition} + { u | <u, definition> <- useDef};
-   println(toRename);
+   	 
    return visit (f) {
    	case (Question)`<Str x> <Id y> : <Type z>` => (Question)`<Str x> <Id nn> : <Type z>`
    		when y@\loc in toRename, Id nn := [Id]newName

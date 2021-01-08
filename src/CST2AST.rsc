@@ -6,8 +6,6 @@ import AST;
 import ParseTree;
 import String;
 
-import IO;
-
 /*
  * Implement a mapping from concrete syntax trees (CSTs) to abstract syntax trees (ASTs)
  *
@@ -28,16 +26,8 @@ AQuestion cst2ast(Question q) {
 		case (Question)`<Str x> <Id y> : <Type z>`: return question("<x>", id("<y>", src=y@\loc), cst2ast(z), [], src=q@\loc);
 		case (Question)`<Str x1> <Id y1> : <Type z1>  = <Expr expression>`: 
 			return question("<x1>", id("<y1>", src=y1@\loc), cst2ast(z1), [cst2ast(expression)], src=q@\loc);
-		case (Question)`if (<Expr guard>) { <Question* questions>} else {<Question* elsesQ>}`: {
-			list[AQuestion] ifs = [], elses = [];
-
-			for (qq <- questions)
-				ifs += cst2ast(qq);
-		
-			for (qq <- elsesQ)
-				elses += cst2ast(qq);
-			return blockQ(cst2ast(q.guard), ifs, elses, src=q@\loc);
-		}
+		case (Question)`if (<Expr guard>) { <Question* questions>} else {<Question* elsesQ>}`: 
+			return blockQ(cst2ast(q.guard), ([] | it + cst2ast(qq) | qq <- questions), ([] | it + cst2ast(qq) | qq <- elsesQ), src=q@\loc);
 		case Question q:
 			return blockQ(cst2ast(q.guard), [cst2ast(qs) | qs <- q.questions], [], src=q@\loc);
 	}
@@ -47,14 +37,7 @@ AExpr cst2ast(Expr e) {
   switch (e) {
     case (Expr)`<Id x>`: return ref(id("<x>", src=x@\loc), src=x@\loc);
     case (Expr)`<Str x>`: return Str("<x>", src=x@\loc);
-    case (Expr)`<Int x>`: {
-    		map[str, int] mapper = ("<y>" : y | y <- [0..10]);
-    		int nb = 0;
-    		for (ch <- [0..size("<x>")]) {
-    			nb = nb * 10 + mapper["<x>"[ch]];
-    		}
-    		return Int(nb);
-    }
+    case (Expr)`<Int x>`: return Int(toInt("<x>"));
     case (Expr)`<Bool x>`: return Bool((Bool)`true` := x ? true : false);
     case (Expr)`(<Expr expression>)`: return par(cst2ast(expression), src=e@\loc);
     case (Expr)`!<Expr expression>`: return not(cst2ast(expression), src=e@\loc);    
