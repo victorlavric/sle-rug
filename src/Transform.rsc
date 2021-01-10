@@ -4,6 +4,8 @@ import Syntax;
 import Resolve;
 import AST;
 import ParseTree;
+import IO;
+
 
 /* 
  * Transforming QL forms
@@ -32,7 +34,8 @@ import ParseTree;
 AQuestion flatten(q:question(str _, AId identifier, AType _, list[AExpr] _), AExpr e) = blockQ(e, [q], []);
 
 list[AQuestion] flatten(blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses), AExpr e) {
-	return ([] | it + flatten(q, and(e, guard)) | q <- ifs) + ([] | it + flatten(q, and(e, not(guard))) | q <- ifs);
+	println(elses);
+	return ([] | it + flatten(q, and(e, guard)) | q <- ifs) + ([] | it + flatten(q, and(e, not(guard))) | q <- elses);
 }
 
 AForm flatten(AForm f, AExpr e) {

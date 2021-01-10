@@ -23,13 +23,13 @@ TEnv collect(AForm f) {
   visit (f) {
   	case q:question(str content, AId identifier, AType typeOf, list[AExpr] express): {
   			if (typeOf.typeOf == "boolean")
-	  			collection += {<identifier.src, content, identifier.name, tbool()>};
+	  			collection += {<identifier.src, identifier.name, content, tbool()>};
 	  		else if (typeOf.typeOf == "integer")
-	  			collection += {<identifier.src, content, identifier.name, tint()>};
+	  			collection += {<identifier.src, identifier.name, content, tint()>};
 	  		else if (typeOf.typeOf == "str")
-	  			collection += {<identifier.src, content, identifier.name, tstr()>};
+	  			collection += {<identifier.src, identifier.name, content, tstr()>};
 	  		else
-	  			collection += {<identifier.src, content, identifier.name, tunknown()>};
+	  			collection += {<identifier.src, identifier.name, content, tunknown()>};
   		}
   }
   return collection; 
@@ -58,8 +58,8 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
   	return msgs;
   }
   // Same label stuff.
-  if (size([t.label | t <- tenv, t.label == q.identifier.name]) > 1)
- 	  msgs += {warning("Two questions have the same label.", q.identifier.src)};
+  if (size([t.label | t <- tenv, t.label == q.content]) > 1)
+ 	  msgs += {warning("There are questions that have the same label.", q.src)};
   
   // Determine the type.
   Type t = tunknown();
@@ -71,9 +71,9 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
     t = tstr();
   // Checking for same names and different types.
   for (tv <- tenv) {
-    if (tv.name == q.content && t != tv.\type)
+    if (tv.name == q.identifier.name && t != tv.\type)
       msgs += {error("There are multiple declarations of questions with the same name, though different types.", q.identifier.src)};
-  	if (tv.name == q.content && tv.label != q.identifier.name) {
+  	if (tv.name == q.identifier.name && tv.label != q.content) {
   	  msgs += {warning("Same questions have different labels", q.src)};
   	}
   }

@@ -211,7 +211,7 @@ str ifElseDet(AQuestion q) {
 }
 
 str ifElseCompute(AForm f) {
-  return ("" | ifElseDet(q) | q <- f.questions);
+  return ("" | it + ifElseDet(q) | q <- f.questions);
 }
 
 str form2js(AForm f) {

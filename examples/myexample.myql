@@ -1,12 +1,13 @@
 form Try {
 	"This is a var" 
-	variable: str = hello
-	if (variable == "batman") {
-		"Hello" hello: str
-		"Yolo" yolo: integer
+	variable: boolean
+	if (variable) {
+		"Hello" hello: str = "hello"
+		"Yolo" yolo: integer = 1 + 2 / 3
 	}
 	else {
-		"World" world: boolean
-		"Wow" wow: boolean = wasea && true 
+		"Batman" world: integer
+		 
+		"Wow" wow: integer = (world/2 + 100)*3
 	}
 }

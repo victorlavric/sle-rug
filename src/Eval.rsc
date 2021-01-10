@@ -54,21 +54,23 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
   // evaluate conditions for branching,
   // evaluate inp and computed questions to return updated VEnv
   
-  if (input(str name, Value \value) := inp) {
-    venv[name] = \value;
-  }
   
   if (blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses) := q) {
   	if (deconstruct(eval(guard, venv)) == true) {
   		for (qq <- ifs)
-  			venv = eval(qq, venv);
+  			venv = eval(qq, inp, venv);
   	}
   	else {
   		for (qq <- elses)
-  			venv = eval(qq, venv);
+  			venv = eval(qq, inp, venv);
   	}
   	
   	return venv;
+  }
+  
+  // To disallow assignment in case we do not evaluate that question
+  if (input(str name, Value \value) := inp && q.identifier.name == name) {
+    venv[name] = \value;
   }
   
   return eval(q, venv); 
