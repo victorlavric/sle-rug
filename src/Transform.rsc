@@ -34,7 +34,6 @@ import IO;
 AQuestion flatten(q:question(str _, AId identifier, AType _, list[AExpr] _), AExpr e) = blockQ(e, [q], []);
 
 list[AQuestion] flatten(blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses), AExpr e) {
-	println(elses);
 	return ([] | it + flatten(q, and(e, guard)) | q <- ifs) + ([] | it + flatten(q, and(e, not(guard))) | q <- elses);
 }
 
