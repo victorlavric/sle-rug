@@ -59,10 +59,7 @@ HTML5Node question2html(AQuestion q) {
 	
 		case question(str content, AId identifier, AType typeOf, list[AExpr] express): {
 			HTML5Attr t = determineType(typeOf);
-			if (size(express) > 0)
-				return form(id("<identifier.name>-f"),label("<content>  <identifier.name>  :  <typeOf.typeOf>"), input(id("<identifier.name>-q"), t));
-			else
-				return form(id("<identifier.name>-f"),label("<content>  <identifier.name>  :  <typeOf.typeOf>"), input(id("<identifier.name>-q"), t));
+			return form(id("<identifier.name>-f"),label("<content>  <identifier.name>  :  <typeOf.typeOf>"), input(id("<identifier.name>-q"), t));
 		}
 	}
 }

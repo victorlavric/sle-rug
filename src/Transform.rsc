@@ -34,12 +34,12 @@ import IO;
 AQuestion flatten(q:question(str _, AId identifier, AType _, list[AExpr] _), AExpr e) = blockQ(e, [q], []);
 
 list[AQuestion] flatten(blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses), AExpr e) {
-	return ([] | it + flatten(q, and(e, guard)) | q <- ifs) + ([] | it + flatten(q, and(e, not(guard))) | q <- elses);
+  return ([] | it + flatten(q, and(e, guard)) | q <- ifs) + ([] | it + flatten(q, and(e, not(guard))) | q <- elses);
 }
 
 AForm flatten(AForm f, AExpr e) {
-	f.questions = ([] | it + flatten(q, e) | q <- f.questions);
-	return f;
+  f.questions = ([] | it + flatten(q, e) | q <- f.questions);
+  return f;
 }
 
 AForm flatten(AForm f) {
@@ -52,23 +52,23 @@ AForm flatten(AForm f) {
  * Use the results of name resolution to find the equivalence class of a name.
  *
  */
- start[Form] rename(start[Form] f, loc useOrDef, str newName, UseDef useDef) {
-   set[loc] toRename = {useOrDef};
+start[Form] rename(start[Form] f, loc useOrDef, str newName, UseDef useDef) {
+  set[loc] toRename = {useOrDef};
    
-   if (useOrDef in useDef.def)
-   	 toRename += { u | <u, useOrDef> <- useDef};
-   if (useOrDef in useDef.use, <useOrDef, loc definition> <- useDef)
-   	 toRename += {definition} + { u | <u, definition> <- useDef};
+  if (useOrDef in useDef.def)
+   	toRename += { u | <u, useOrDef> <- useDef};
+  if (useOrDef in useDef.use, <useOrDef, loc definition> <- useDef)
+   	toRename += {definition} + { u | <u, definition> <- useDef};
    	 
-   return visit (f) {
+  return visit (f) {
    	case (Question)`<Str x> <Id y> : <Type z>` => (Question)`<Str x> <Id nn> : <Type z>`
-   		when y@\loc in toRename, Id nn := [Id]newName
+   	  when y@\loc in toRename, Id nn := [Id]newName
    	case (Question)`<Str x> <Id y> : <Type z> = <Expr expression>` => (Question)`<Str x> <Id nn> : <Type z>  = <Expr expression>`
-   		when y@\loc in toRename, Id nn := [Id]newName
+   	  when y@\loc in toRename, Id nn := [Id]newName
    	case (Expr)`<Id x>` => (Expr)`<Id nn>` 
-   		when x@\loc in toRename, Id nn := [Id]newName
-   };
- }
+   	  when x@\loc in toRename, Id nn := [Id]newName
+  };
+}
  
  
  

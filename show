@@ -1,0 +1,35 @@
+- show always files ?
+- explain the code
+- then demonstrate ?
+
+1. Syntax
+parseDemo(tax);
+visualParseDemo(tax);
+visualExpression("2 + 3*1");
+
+2. CST2AST and resolve
+- show AST
+makeASTDemo(tax);
+resolve(makeASTDemo(tax));
+show in IDE
+
+3. Compile
+makeCompile(tax);
+show the sites
+
+
+4. Interpret
+interpretDemo(myexample, "variable", true);
+interpretDemo(myexample, "world", 32);
+interpretDemo(tax, "hasSoldHouse", true);
+
+5. Flatten
+flattenDemo(tax);
+
+6. Rename
+- first resolve to show what you take
+resolve(makeASTDemo(tax))
+- use
+rename(parseDemo(tax), |project://QL/examples/tax.myql|(258,12,<14,6>,<14,18>), "batman", resolve(makeASTDemo(tax)).useDef);
+-def
+rename(parseDemo(tax), |project://QL/examples/tax.myql|(226,12,<12,4>,<12,16>), "batman", resolve(makeASTDemo(tax)).UseDef);

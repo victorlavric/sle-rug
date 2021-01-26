@@ -38,12 +38,16 @@ Value defaultFor(\type("str")) = vstr("");
 // Because of out-of-order use and declaration of questions
 // we use the solve primitive in Rascal to find the fixpoint of venv.
 VEnv eval(AForm f, Input inp, VEnv venv) {
+  if (input(str name, Value \value) := inp) {
+    venv[name] = \value;
+  }
   return solve (venv) {
     venv = evalOnce(f, inp, venv);
   }
 }
 
 VEnv evalOnce(AForm f, Input inp, VEnv venv) {
+  
   for (quest <- f.questions)
   	venv = eval(quest, inp, venv);
   
@@ -56,6 +60,7 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
   
   
   if (blockQ(AExpr guard, list[AQuestion] ifs, list[AQuestion] elses) := q) {
+  	
   	if (deconstruct(eval(guard, venv)) == true) {
   		for (qq <- ifs)
   			venv = eval(qq, inp, venv);
@@ -68,20 +73,15 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
   	return venv;
   }
   
-  // To disallow assignment in case we do not evaluate that question
-  if (input(str name, Value \value) := inp && q.identifier.name == name) {
-    venv[name] = \value;
-  }
-  
   return eval(q, venv); 
 }
 
 VEnv eval(AQuestion q, VEnv venv) {
-	for (expr <- q.express) {
-		venv[q.identifier.name] = eval(expr, venv);
-	}
+  for (expr <- q.express) {
+    venv[q.identifier.name] = eval(expr, venv);
+  }
 		 
-	return venv;
+  return venv;
 }
 
 int deconstruct(vint(int v)) = v;
